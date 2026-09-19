@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789398530078,
+      "tag": "0000_young_warbound",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789467617699,
+      "tag": "0001_same_archangel",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789473781886,
+      "tag": "0002_spotty_silk_fever",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789474126373,
+      "tag": "0003_mean_susan_delgado",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1789475318161,
+      "tag": "0004_magical_boom_boom",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1789475755239,
+      "tag": "0005_wide_living_lightning",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789476304023,
+      "tag": "0006_bored_network",
+      "breakpoints": true
+    }
+  ]
+}

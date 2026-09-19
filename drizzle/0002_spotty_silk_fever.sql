@@ -1,0 +1,1 @@
+ALTER TABLE "plans" ADD COLUMN "duration_months" integer DEFAULT 1 NOT NULL;
