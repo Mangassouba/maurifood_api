@@ -9,10 +9,13 @@ const categories = require('../controllers/categories.controller')
 const restaurant = require('../controllers/restaurant.controller')
 const staff = require('../controllers/staff.controller')
 const notifications = require('../controllers/notifications.controller')
+const stats = require('../controllers/stats.controller')
 
 const router = Router()
 
 router.use(authRequired, requireRole('restaurant_owner', 'staff'), restaurantScope)
+
+router.get('/stats', stats.getDashboardStats)
 
 router.get('/dishes', dishes.list)
 router.post('/dishes', dishes.create)
