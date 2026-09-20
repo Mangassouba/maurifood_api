@@ -3,10 +3,13 @@ const { authRequired, requireRole } = require('../middlewares/auth.middleware')
 const admin = require('../controllers/admin.controller')
 const { listPlans } = require('../controllers/subscription.controller')
 const notifications = require('../controllers/notifications.controller')
+const stats = require('../controllers/stats.controller')
 
 const router = Router()
 
 router.use(authRequired, requireRole('super_admin'))
+
+router.get('/stats', stats.getAdminStats)
 
 router.get('/restaurants', admin.listRestaurants)
 router.put('/restaurants/:id/active', admin.setRestaurantActive)
