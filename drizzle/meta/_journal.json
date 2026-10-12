@@ -50,6 +50,13 @@
       "when": 1789476304023,
       "tag": "0006_bored_network",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791818999381,
+      "tag": "0007_small_the_phantom",
+      "breakpoints": true
     }
   ]
 }

@@ -25,6 +25,7 @@ const orderStatus = pgEnum('order_status', [
   'pending',
   'confirmed',
   'preparing',
+  'ready',
   'out_for_delivery',
   'delivered',
   'cancelled',

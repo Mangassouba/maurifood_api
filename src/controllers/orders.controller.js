@@ -1,6 +1,6 @@
 const { eq, and, inArray } = require('drizzle-orm')
 const db = require('../config/db')
-const { orders, orderItems, dishes, deliveryZones } = require('../db/schema')
+const { orders, orderItems, dishes, deliveryZones, orderStatus } = require('../db/schema')
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -136,6 +136,13 @@ async function updateStatus(req, res) {
     .from(orders)
     .where(and(eq(orders.id, Number(req.params.id)), eq(orders.restaurantId, req.restaurantId)))
   if (!order) return res.status(404).json({ error: 'Commande introuvable' })
+
+  if (!orderStatus.enumValues.includes(status)) {
+    return res.status(400).json({ error: 'Statut invalide' })
+  }
+  if (status === 'out_for_delivery' && order.orderType !== 'delivery') {
+    return res.status(400).json({ error: 'Une commande à emporter ne peut pas être en livraison' })
+  }
 
   const [updated] = await db
     .update(orders)

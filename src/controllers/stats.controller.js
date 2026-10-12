@@ -1,7 +1,15 @@
 const db = require('../config/db')
 
-const ACTIVE_STATUSES = ['pending', 'confirmed', 'preparing', 'out_for_delivery']
-const STATUS_ORDER = ['pending', 'confirmed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled']
+const ACTIVE_STATUSES = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery']
+const STATUS_ORDER = [
+  'pending',
+  'confirmed',
+  'preparing',
+  'ready',
+  'out_for_delivery',
+  'delivered',
+  'cancelled',
+]
 const SUBSCRIPTION_STATUS_ORDER = ['trialing', 'active', 'past_due', 'cancelled', 'none']
 const DAYS_IN_TREND = 14
 const MONTHS_IN_TREND = 12
