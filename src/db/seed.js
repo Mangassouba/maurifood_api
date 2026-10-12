@@ -27,8 +27,16 @@ async function seedRestaurant(def, planId) {
         name: def.name,
         slug: def.slug,
         description: def.description,
+        phone: def.phone,
+        address: def.address,
         isActive: true,
       })
+      .returning()
+  } else if (!restaurant.phone || !restaurant.address) {
+    ;[restaurant] = await db
+      .update(restaurants)
+      .set({ phone: restaurant.phone || def.phone, address: restaurant.address || def.address })
+      .where(eq(restaurants.id, restaurant.id))
       .returning()
   }
 
@@ -122,6 +130,8 @@ async function main() {
       slug: 'chez-demo',
       name: 'Chez Demo',
       description: 'Restaurant de démonstration',
+      phone: '+222 45 25 10 10',
+      address: 'Avenue Gamal Abdel Nasser, Tevragh Zeina, Nouakchott',
       ownerEmail: 'owner@chezdemo.com',
       ownerPassword: 'owner1234',
       ownerName: 'Propriétaire Demo',
@@ -143,6 +153,8 @@ async function main() {
       slug: 'le-bledi',
       name: 'Le Bledi',
       description: 'Cuisine traditionnelle mauritanienne et maghrébine',
+      phone: '+222 36 41 22 33',
+      address: "Rue de l'Espoir, Ksar, Nouakchott",
       ownerEmail: 'owner@lebledi.com',
       ownerPassword: 'owner1234',
       ownerName: 'Propriétaire Le Bledi',
@@ -175,6 +187,8 @@ async function main() {
       slug: 'nouakchott-grill',
       name: 'Nouakchott Grill',
       description: 'Grillades, burgers et viandes au charbon de bois',
+      phone: '+222 22 87 54 76',
+      address: 'Carrefour Madrid, Tevragh Zeina, Nouakchott',
       ownerEmail: 'owner@nouakchottgrill.com',
       ownerPassword: 'owner1234',
       ownerName: 'Propriétaire Nouakchott Grill',

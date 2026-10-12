@@ -58,6 +58,7 @@ async function listRestaurants(req, res) {
       description: r.description,
       logoUrl: r.logoUrl,
       address: r.address,
+      phone: r.phone,
       dishCount: r.dishes.length,
     })),
   )
