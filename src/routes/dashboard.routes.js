@@ -1,4 +1,5 @@
-const { Router } = require('express')
+const express = require('express')
+const { Router } = express
 const { authRequired, requireRole } = require('../middlewares/auth.middleware')
 const restaurantScope = require('../middlewares/restaurantScope.middleware')
 const dishes = require('../controllers/dishes.controller')
@@ -10,6 +11,7 @@ const restaurant = require('../controllers/restaurant.controller')
 const staff = require('../controllers/staff.controller')
 const notifications = require('../controllers/notifications.controller')
 const stats = require('../controllers/stats.controller')
+const images = require('../controllers/images.controller')
 
 const router = Router()
 
@@ -21,6 +23,12 @@ router.get('/dishes', dishes.list)
 router.post('/dishes', dishes.create)
 router.put('/dishes/:id', dishes.update)
 router.delete('/dishes/:id', dishes.remove)
+
+router.post(
+  '/images',
+  express.raw({ type: ['image/jpeg', 'image/png', 'image/webp'], limit: '3mb' }),
+  images.upload,
+)
 
 router.get('/categories', categories.list)
 router.post('/categories', categories.create)

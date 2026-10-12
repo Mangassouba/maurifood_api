@@ -141,11 +141,15 @@ async function main() {
           name: 'Thieboudienne',
           description: 'Riz au poisson traditionnel',
           price: '1500',
+          imageUrl:
+            'https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=600&q=80',
         },
         {
           name: 'Méchoui',
           description: 'Agneau grillé',
           price: '3000',
+          imageUrl:
+            'https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?auto=format&fit=crop&w=600&q=80',
         },
       ],
     },

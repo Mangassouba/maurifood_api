@@ -9,7 +9,10 @@ const {
   timestamp,
   numeric,
   doublePrecision,
+  customType,
 } = require('drizzle-orm/pg-core')
+
+const bytea = customType({ dataType: () => 'bytea' })
 const { relations } = require('drizzle-orm')
 
 const userRole = pgEnum('user_role', ['super_admin', 'restaurant_owner', 'staff'])
@@ -193,6 +196,18 @@ const notifications = pgTable('notifications', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+// Images envoyées depuis le tableau de bord, stockées en base car le disque
+// de l'hébergeur n'est pas persistant entre deux déploiements.
+const images = pgTable('images', {
+  id: serial('id').primaryKey(),
+  restaurantId: integer('restaurant_id')
+    .notNull()
+    .references(() => restaurants.id, { onDelete: 'cascade' }),
+  mimeType: varchar('mime_type', { length: 50 }).notNull(),
+  data: bytea('data').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
 const activityLogs = pgTable('activity_logs', {
   id: serial('id').primaryKey(),
   action: varchar('action', { length: 100 }).notNull(),
@@ -324,6 +339,7 @@ module.exports = {
   subscriptions,
   notifications,
   activityLogs,
+  images,
   restaurantsRelations,
   usersRelations,
   categoriesRelations,
