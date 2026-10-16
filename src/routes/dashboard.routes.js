@@ -12,6 +12,7 @@ const staff = require('../controllers/staff.controller')
 const notifications = require('../controllers/notifications.controller')
 const stats = require('../controllers/stats.controller')
 const images = require('../controllers/images.controller')
+const drivers = require('../controllers/drivers.controller')
 
 const router = Router()
 
@@ -36,6 +37,12 @@ router.delete('/categories/:id', categories.remove)
 
 router.get('/orders', orders.listForRestaurant)
 router.put('/orders/:id/status', orders.updateStatus)
+router.put('/orders/:id/driver', orders.assignDriver)
+
+router.get('/drivers', drivers.list)
+router.post('/drivers', drivers.create)
+router.put('/drivers/:id', drivers.update)
+router.delete('/drivers/:id', drivers.remove)
 
 router.get('/delivery-zones', deliveryZones.list)
 router.post('/delivery-zones', deliveryZones.create)

@@ -1,6 +1,14 @@
 const { eq, and, inArray } = require('drizzle-orm')
 const db = require('../config/db')
-const { orders, orderItems, dishes, deliveryZones, orderStatus } = require('../db/schema')
+const {
+  orders,
+  orderItems,
+  dishes,
+  deliveryZones,
+  drivers,
+  restaurants,
+  orderStatus,
+} = require('../db/schema')
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -25,6 +33,15 @@ async function createOrder(req, res) {
   }
   if (orderType === 'delivery' && !guestAddress?.trim()) {
     return res.status(400).json({ error: "L'adresse de livraison est requise" })
+  }
+  if (orderType === 'delivery') {
+    const [restaurant] = await db
+      .select({ offersDelivery: restaurants.offersDelivery })
+      .from(restaurants)
+      .where(eq(restaurants.id, restaurantId))
+    if (!restaurant?.offersDelivery) {
+      return res.status(400).json({ error: 'Ce restaurant ne propose pas la livraison' })
+    }
   }
 
   const dishRows = await db
@@ -112,6 +129,7 @@ async function getOrderByCode(req, res) {
     with: {
       items: { with: { dish: true } },
       restaurant: { columns: { name: true, phone: true, address: true } },
+      driver: { columns: { name: true, phone: true } },
     },
   })
   if (!order) return res.status(404).json({ error: 'Commande introuvable' })
@@ -124,7 +142,7 @@ async function listForRestaurant(req, res) {
   const items = await db.query.orders.findMany({
     where: (orders, { eq }) => eq(orders.restaurantId, req.restaurantId),
     orderBy: (orders, { desc }) => [desc(orders.createdAt)],
-    with: { items: { with: { dish: true } }, deliveryAddress: true },
+    with: { items: { with: { dish: true } }, deliveryAddress: true, driver: true },
   })
   res.json(items)
 }
@@ -143,6 +161,9 @@ async function updateStatus(req, res) {
   if (status === 'out_for_delivery' && order.orderType !== 'delivery') {
     return res.status(400).json({ error: 'Une commande à emporter ne peut pas être en livraison' })
   }
+  if (status === 'out_for_delivery' && !order.driverId) {
+    return res.status(400).json({ error: 'Assignez un livreur avant de lancer la livraison' })
+  }
 
   const [updated] = await db
     .update(orders)
@@ -156,7 +177,38 @@ async function updateStatus(req, res) {
   res.json(updated)
 }
 
+async function assignDriver(req, res) {
+  const [order] = await db
+    .select()
+    .from(orders)
+    .where(and(eq(orders.id, Number(req.params.id)), eq(orders.restaurantId, req.restaurantId)))
+  if (!order) return res.status(404).json({ error: 'Commande introuvable' })
+  if (order.orderType !== 'delivery') {
+    return res.status(400).json({ error: 'Seules les commandes en livraison ont un livreur' })
+  }
+
+  const driverId = req.body.driverId ? Number(req.body.driverId) : null
+  if (driverId) {
+    const [driver] = await db
+      .select()
+      .from(drivers)
+      .where(and(eq(drivers.id, driverId), eq(drivers.restaurantId, req.restaurantId)))
+    if (!driver || !driver.isActive) {
+      return res.status(400).json({ error: 'Livreur introuvable ou inactif' })
+    }
+  }
+
+  const [updated] = await db
+    .update(orders)
+    .set({ driverId })
+    .where(eq(orders.id, order.id))
+    .returning()
+
+  res.json(updated)
+}
+
 module.exports = {
+  assignDriver,
   createOrder,
   getOrderByCode,
   listForRestaurant,

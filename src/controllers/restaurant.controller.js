@@ -10,7 +10,7 @@ async function getProfile(req, res) {
 }
 
 async function updateProfile(req, res) {
-  const { name, description, phone, address, lat, lng, logoUrl } = req.body
+  const { name, description, phone, address, lat, lng, logoUrl, offersDelivery } = req.body
 
   const data = {}
   if (name !== undefined) data.name = name
@@ -18,6 +18,7 @@ async function updateProfile(req, res) {
   if (phone !== undefined) data.phone = phone
   if (address !== undefined) data.address = address
   if (logoUrl !== undefined) data.logoUrl = logoUrl
+  if (offersDelivery !== undefined) data.offersDelivery = Boolean(offersDelivery)
   if (lat !== undefined) data.lat = lat === '' || lat === null ? null : Number(lat)
   if (lng !== undefined) data.lng = lng === '' || lng === null ? null : Number(lng)
 

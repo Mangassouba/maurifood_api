@@ -46,6 +46,8 @@ const restaurants = pgTable('restaurants', {
   lat: doublePrecision('lat'),
   lng: doublePrecision('lng'),
   phone: varchar('phone', { length: 50 }),
+  // Le restaurant choisit s'il assure la livraison ; sinon, commandes à emporter uniquement
+  offersDelivery: boolean('offers_delivery').notNull().default(false),
   isActive: boolean('is_active').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
@@ -122,7 +124,9 @@ const drivers = pgTable('drivers', {
     .references(() => restaurants.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   phone: varchar('phone', { length: 50 }),
+  vehicle: text('vehicle'),
   isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
 const orders = pgTable('orders', {
