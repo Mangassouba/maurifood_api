@@ -2,6 +2,7 @@ const express = require('express')
 const { Router } = express
 const { authRequired, requireRole } = require('../middlewares/auth.middleware')
 const restaurantScope = require('../middlewares/restaurantScope.middleware')
+const subscriptionActive = require('../middlewares/subscriptionActive.middleware')
 const dishes = require('../controllers/dishes.controller')
 const orders = require('../controllers/orders.controller')
 const deliveryZones = require('../controllers/deliveryZones.controller')
@@ -17,6 +18,16 @@ const drivers = require('../controllers/drivers.controller')
 const router = Router()
 
 router.use(authRequired, requireRole('restaurant_owner', 'staff'), restaurantScope)
+
+// Restent accessibles avec un abonnement expiré, pour pouvoir le renouveler.
+router.get('/subscription', subscription.mySubscription)
+router.post(
+  '/renewal-request',
+  requireRole('restaurant_owner'),
+  notifications.createRenewalRequest,
+)
+
+router.use(subscriptionActive)
 
 router.get('/stats', stats.getDashboardStats)
 
@@ -48,13 +59,6 @@ router.get('/delivery-zones', deliveryZones.list)
 router.post('/delivery-zones', deliveryZones.create)
 router.put('/delivery-zones/:id', deliveryZones.update)
 router.delete('/delivery-zones/:id', deliveryZones.remove)
-
-router.get('/subscription', subscription.mySubscription)
-router.post(
-  '/renewal-request',
-  requireRole('restaurant_owner'),
-  notifications.createRenewalRequest,
-)
 
 router.get('/restaurant', restaurant.getProfile)
 router.put('/restaurant', restaurant.updateProfile)

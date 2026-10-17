@@ -34,14 +34,15 @@ async function createOrder(req, res) {
   if (orderType === 'delivery' && !guestAddress?.trim()) {
     return res.status(400).json({ error: "L'adresse de livraison est requise" })
   }
-  if (orderType === 'delivery') {
-    const [restaurant] = await db
-      .select({ offersDelivery: restaurants.offersDelivery })
-      .from(restaurants)
-      .where(eq(restaurants.id, restaurantId))
-    if (!restaurant?.offersDelivery) {
-      return res.status(400).json({ error: 'Ce restaurant ne propose pas la livraison' })
-    }
+  const [restaurant] = await db
+    .select({ isActive: restaurants.isActive, offersDelivery: restaurants.offersDelivery })
+    .from(restaurants)
+    .where(eq(restaurants.id, restaurantId))
+  if (!restaurant?.isActive) {
+    return res.status(400).json({ error: "Ce restaurant n'accepte pas de commandes actuellement" })
+  }
+  if (orderType === 'delivery' && !restaurant.offersDelivery) {
+    return res.status(400).json({ error: 'Ce restaurant ne propose pas la livraison' })
   }
 
   const dishRows = await db
