@@ -50,6 +50,7 @@ router.post('/categories', categories.create)
 router.delete('/categories/:id', categories.remove)
 
 router.get('/orders', orders.listForRestaurant)
+router.post('/pos/sales', orders.createPosSale)
 router.put('/orders/:id/status', orders.updateStatus)
 router.put('/orders/:id/driver', orders.assignDriver)
 

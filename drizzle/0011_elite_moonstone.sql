@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "source" varchar(20) DEFAULT 'online' NOT NULL;

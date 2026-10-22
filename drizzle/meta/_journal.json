@@ -78,6 +78,13 @@
       "when": 1792682258542,
       "tag": "0010_unusual_impossible_man",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792682703465,
+      "tag": "0011_elite_moonstone",
+      "breakpoints": true
     }
   ]
 }

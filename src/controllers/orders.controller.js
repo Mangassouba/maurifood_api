@@ -149,6 +149,82 @@ async function getOrderByCode(req, res) {
 
 // --- Côté restaurant (dashboard) ---
 
+const PAYMENT_METHODS = ['cash', 'card', 'mobile_money']
+
+// Vente au comptoir : le client paie et repart tout de suite, la commande est
+// donc enregistrée directement comme retirée et payée.
+async function createPosSale(req, res) {
+  const { items, paymentMethod = 'cash', customerName, customerPhone } = req.body
+
+  if (!items?.length || items.some((i) => !i.dishId || !(i.quantity > 0))) {
+    return res.status(400).json({ error: 'Ajoutez au moins un plat' })
+  }
+  if (!PAYMENT_METHODS.includes(paymentMethod)) {
+    return res.status(400).json({ error: 'Moyen de paiement invalide' })
+  }
+
+  const dishIds = [...new Set(items.map((i) => i.dishId))]
+  const dishRows = await db
+    .select()
+    .from(dishes)
+    .where(and(inArray(dishes.id, dishIds), eq(dishes.restaurantId, req.restaurantId)))
+  if (dishRows.length !== dishIds.length) {
+    return res.status(400).json({ error: 'Un ou plusieurs plats sont invalides' })
+  }
+
+  const subtotal = items.reduce((sum, item) => {
+    const dish = dishRows.find((d) => d.id === item.dishId)
+    return sum + Number(dish.price) * item.quantity
+  }, 0)
+
+  const order = await db.transaction(async (tx) => {
+    let newOrder
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        ;[newOrder] = await tx
+          .insert(orders)
+          .values({
+            restaurantId: req.restaurantId,
+            code: generateOrderCode(),
+            guestName: customerName?.trim() || 'Client comptoir',
+            guestPhone: customerPhone?.trim() || null,
+            orderType: 'pickup',
+            status: 'delivered',
+            subtotal: subtotal.toFixed(2),
+            deliveryFee: '0',
+            total: subtotal.toFixed(2),
+            paymentStatus: 'paid',
+            paymentMethod,
+            source: 'pos',
+          })
+          .returning()
+        break
+      } catch (err) {
+        const isDuplicateCode = err.code === '23505' && err.constraint === 'orders_code_unique'
+        if (!isDuplicateCode || attempt === 4) throw err
+      }
+    }
+
+    await tx.insert(orderItems).values(
+      items.map((item) => ({
+        orderId: newOrder.id,
+        dishId: item.dishId,
+        quantity: item.quantity,
+        unitPrice: dishRows.find((d) => d.id === item.dishId).price,
+        notes: item.notes,
+      })),
+    )
+
+    return newOrder
+  })
+
+  const full = await db.query.orders.findFirst({
+    where: (orders, { eq }) => eq(orders.id, order.id),
+    with: { items: { with: { dish: true } }, restaurant: { columns: { name: true } } },
+  })
+  res.status(201).json(full)
+}
+
 async function listForRestaurant(req, res) {
   const items = await db.query.orders.findMany({
     where: (orders, { eq }) => eq(orders.restaurantId, req.restaurantId),
@@ -221,6 +297,7 @@ async function assignDriver(req, res) {
 module.exports = {
   assignDriver,
   createOrder,
+  createPosSale,
   getOrderByCode,
   listForRestaurant,
   updateStatus,

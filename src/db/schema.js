@@ -148,6 +148,8 @@ const orders = pgTable('orders', {
   total: numeric('total', { precision: 10, scale: 2 }).notNull(),
   paymentStatus: paymentStatus('payment_status').notNull().default('unpaid'),
   paymentMethod: paymentMethod('payment_method').notNull().default('cash'),
+  // 'online' : commande passée par un client sur le site ; 'pos' : vente saisie à la caisse
+  source: varchar('source', { length: 20 }).notNull().default('online'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
