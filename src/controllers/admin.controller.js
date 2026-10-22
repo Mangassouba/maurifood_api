@@ -28,22 +28,51 @@ async function setRestaurantActive(req, res) {
   res.json(restaurant)
 }
 
+// Ajoute des mois en restant sur le dernier jour du mois si besoin
+// (31 janvier + 1 mois = 28/29 février, et non 3 mars).
+function addMonths(date, months) {
+  const result = new Date(date)
+  const day = result.getDate()
+  result.setDate(1)
+  result.setMonth(result.getMonth() + months)
+  const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate()
+  result.setDate(Math.min(day, lastDay))
+  return result
+}
+
 // Activation manuelle de l'abonnement après paiement hors-ligne (virement, cash...)
 async function upsertSubscription(req, res) {
   const restaurantId = Number(req.params.id)
-  const { planId, status, currentPeriodStart, currentPeriodEnd } = req.body
-  const data = {
-    restaurantId,
-    planId,
-    status,
-    currentPeriodStart: currentPeriodStart ? new Date(currentPeriodStart) : null,
-    currentPeriodEnd: currentPeriodEnd ? new Date(currentPeriodEnd) : null,
+  const { planId, status, renew, currentPeriodStart, currentPeriodEnd } = req.body
+
+  const [plan] = await db.select().from(plans).where(eq(plans.id, planId))
+  if (!plan) {
+    return res.status(400).json({ error: 'Formule introuvable' })
   }
 
   const [existing] = await db
     .select()
     .from(subscriptions)
     .where(eq(subscriptions.restaurantId, restaurantId))
+
+  const data = { restaurantId, planId, status }
+  if (currentPeriodStart || currentPeriodEnd) {
+    data.currentPeriodStart = currentPeriodStart ? new Date(currentPeriodStart) : null
+    data.currentPeriodEnd = currentPeriodEnd ? new Date(currentPeriodEnd) : null
+  } else if (status === 'active' && renew) {
+    // Nouvelle période calculée selon la durée de la formule choisie. Sans
+    // `renew`, les dates actuelles sont conservées (simple changement de
+    // formule ou de statut). Un
+    // renouvellement anticipé prolonge la période en cours au lieu de repartir
+    // d'aujourd'hui, pour que le restaurant ne perde pas ses jours restants.
+    const now = new Date()
+    const stillRunning = existing?.currentPeriodEnd && existing.currentPeriodEnd > now
+    data.currentPeriodStart = stillRunning ? existing.currentPeriodStart : now
+    data.currentPeriodEnd = addMonths(
+      stillRunning ? existing.currentPeriodEnd : now,
+      plan.durationMonths,
+    )
+  }
 
   const [subscription] = existing
     ? await db
@@ -54,7 +83,6 @@ async function upsertSubscription(req, res) {
     : await db.insert(subscriptions).values(data).returning()
 
   const [restaurant] = await db.select().from(restaurants).where(eq(restaurants.id, restaurantId))
-  const [plan] = await db.select().from(plans).where(eq(plans.id, planId))
   await logActivity({
     action: 'subscription.updated',
     message: `Abonnement de ${restaurant?.name} mis à jour : formule ${plan?.name}, statut ${status}`,
@@ -70,6 +98,12 @@ async function upsertSubscription(req, res) {
       .update(notifications)
       .set({ isRead: true })
       .where(and(eq(notifications.restaurantId, restaurantId), eq(notifications.isRead, false)))
+  }
+
+  // À l'inverse, un abonnement suspendu ou annulé retire le restaurant du public,
+  // comme le fait le job d'expiration automatique.
+  if (['past_due', 'cancelled'].includes(status)) {
+    await db.update(restaurants).set({ isActive: false }).where(eq(restaurants.id, restaurantId))
   }
 
   res.json(subscription)
