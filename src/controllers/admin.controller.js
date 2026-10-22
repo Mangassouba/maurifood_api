@@ -2,6 +2,7 @@ const { eq, and } = require('drizzle-orm')
 const db = require('../config/db')
 const { restaurants, subscriptions, notifications, plans } = require('../db/schema')
 const { logActivity } = require('../lib/activityLog')
+const { notifyRestaurant } = require('../lib/restaurantNotify')
 
 async function listRestaurants(req, res) {
   const items = await db.query.restaurants.findMany({
@@ -98,12 +99,29 @@ async function upsertSubscription(req, res) {
       .update(notifications)
       .set({ isRead: true })
       .where(and(eq(notifications.restaurantId, restaurantId), eq(notifications.isRead, false)))
+    await notifyRestaurant({
+      restaurantId,
+      type: 'subscription.activated',
+      message: subscription.currentPeriodEnd
+        ? `Votre abonnement ${plan?.name} est actif jusqu'au ${subscription.currentPeriodEnd.toLocaleDateString('fr-FR')}.`
+        : `Votre abonnement ${plan?.name} est actif.`,
+      link: '/dashboard/subscription',
+    })
   }
 
   // À l'inverse, un abonnement suspendu ou annulé retire le restaurant du public,
   // comme le fait le job d'expiration automatique.
   if (['past_due', 'cancelled'].includes(status)) {
     await db.update(restaurants).set({ isActive: false }).where(eq(restaurants.id, restaurantId))
+    await notifyRestaurant({
+      restaurantId,
+      type: 'subscription.suspended',
+      message:
+        status === 'cancelled'
+          ? 'Votre abonnement a été annulé. Votre restaurant n’est plus visible par les clients.'
+          : 'Votre abonnement a été suspendu. Votre restaurant n’est plus visible par les clients.',
+      link: '/dashboard/subscription',
+    })
   }
 
   res.json(subscription)

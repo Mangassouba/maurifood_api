@@ -2,6 +2,7 @@ const { and, eq, lt } = require('drizzle-orm')
 const db = require('../config/db')
 const { subscriptions, restaurants } = require('../db/schema')
 const { logActivity } = require('../lib/activityLog')
+const { notifyRestaurant } = require('../lib/restaurantNotify')
 
 // Désactive automatiquement les restaurants dont l'abonnement est arrivé à
 // échéance (currentPeriodEnd dépassé) sans avoir été renouvelé.
@@ -28,6 +29,12 @@ async function expireOverdueSubscriptions() {
       action: 'subscription.expired',
       message: `Abonnement expiré — ${sub.restaurantName} désactivé automatiquement`,
       restaurantId: sub.restaurantId,
+    })
+    await notifyRestaurant({
+      restaurantId: sub.restaurantId,
+      type: 'subscription.expired',
+      message: 'Votre abonnement a expiré. Renouvelez-le pour rendre votre restaurant à nouveau visible.',
+      link: '/dashboard/subscription',
     })
   }
 

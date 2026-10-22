@@ -200,6 +200,20 @@ const notifications = pgTable('notifications', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+// Notifications destinées à l'espace restaurant (nouvelles commandes,
+// changements d'abonnement…), distinctes des demandes adressées au super admin.
+const restaurantNotifications = pgTable('restaurant_notifications', {
+  id: serial('id').primaryKey(),
+  restaurantId: integer('restaurant_id')
+    .notNull()
+    .references(() => restaurants.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 50 }).notNull(),
+  message: text('message').notNull(),
+  link: text('link'),
+  isRead: boolean('is_read').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
 // Images envoyées depuis le tableau de bord, stockées en base car le disque
 // de l'hébergeur n'est pas persistant entre deux déploiements.
 const images = pgTable('images', {
@@ -232,6 +246,7 @@ const restaurantsRelations = relations(restaurants, ({ many, one }) => ({
   deliveryZones: many(deliveryZones),
   drivers: many(drivers),
   notifications: many(notifications),
+  restaurantNotifications: many(restaurantNotifications),
   activityLogs: many(activityLogs),
   subscription: one(subscriptions, {
     fields: [restaurants.id],
@@ -314,6 +329,13 @@ const notificationsRelations = relations(notifications, ({ one }) => ({
   plan: one(plans, { fields: [notifications.planId], references: [plans.id] }),
 }))
 
+const restaurantNotificationsRelations = relations(restaurantNotifications, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [restaurantNotifications.restaurantId],
+    references: [restaurants.id],
+  }),
+}))
+
 const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   restaurant: one(restaurants, {
     fields: [activityLogs.restaurantId],
@@ -342,6 +364,7 @@ module.exports = {
   plans,
   subscriptions,
   notifications,
+  restaurantNotifications,
   activityLogs,
   images,
   restaurantsRelations,
@@ -357,5 +380,6 @@ module.exports = {
   plansRelations,
   subscriptionsRelations,
   notificationsRelations,
+  restaurantNotificationsRelations,
   activityLogsRelations,
 }

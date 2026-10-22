@@ -26,6 +26,9 @@ router.post(
   requireRole('restaurant_owner'),
   notifications.createRenewalRequest,
 )
+router.get('/notifications', notifications.listForRestaurant)
+router.put('/notifications/read-all', notifications.markAllReadForRestaurant)
+router.put('/notifications/:id/read', notifications.markReadForRestaurant)
 
 router.use(subscriptionActive)
 

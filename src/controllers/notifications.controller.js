@@ -1,6 +1,6 @@
-const { eq, desc } = require('drizzle-orm')
+const { and, eq, desc } = require('drizzle-orm')
 const db = require('../config/db')
-const { notifications, restaurants, plans } = require('../db/schema')
+const { notifications, restaurantNotifications, restaurants, plans } = require('../db/schema')
 const { logActivity } = require('../lib/activityLog')
 
 // --- Côté restaurant (dashboard) ---
@@ -37,6 +37,45 @@ async function createRenewalRequest(req, res) {
   res.status(201).json(created)
 }
 
+async function listForRestaurant(req, res) {
+  const items = await db
+    .select()
+    .from(restaurantNotifications)
+    .where(eq(restaurantNotifications.restaurantId, req.restaurantId))
+    .orderBy(desc(restaurantNotifications.createdAt))
+    .limit(50)
+  res.json(items)
+}
+
+async function markReadForRestaurant(req, res) {
+  const [updated] = await db
+    .update(restaurantNotifications)
+    .set({ isRead: true })
+    .where(
+      and(
+        eq(restaurantNotifications.id, Number(req.params.id)),
+        eq(restaurantNotifications.restaurantId, req.restaurantId),
+      ),
+    )
+    .returning()
+
+  if (!updated) return res.status(404).json({ error: 'Notification introuvable' })
+  res.json(updated)
+}
+
+async function markAllReadForRestaurant(req, res) {
+  await db
+    .update(restaurantNotifications)
+    .set({ isRead: true })
+    .where(
+      and(
+        eq(restaurantNotifications.restaurantId, req.restaurantId),
+        eq(restaurantNotifications.isRead, false),
+      ),
+    )
+  res.status(204).end()
+}
+
 // --- Côté super admin ---
 
 async function listForAdmin(req, res) {
@@ -61,4 +100,11 @@ async function markRead(req, res) {
   res.json(updated)
 }
 
-module.exports = { createRenewalRequest, listForAdmin, markRead }
+module.exports = {
+  createRenewalRequest,
+  listForRestaurant,
+  markReadForRestaurant,
+  markAllReadForRestaurant,
+  listForAdmin,
+  markRead,
+}

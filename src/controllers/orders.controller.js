@@ -9,6 +9,7 @@ const {
   restaurants,
   orderStatus,
 } = require('../db/schema')
+const { notifyRestaurant } = require('../lib/restaurantNotify')
 
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
@@ -119,6 +120,15 @@ async function createOrder(req, res) {
       .returning()
 
     return { ...newOrder, items: newItems }
+  })
+
+  await notifyRestaurant({
+    restaurantId,
+    type: 'order.created',
+    message: `Nouvelle commande ${order.code} — ${Number(order.total)} MRU (${
+      order.orderType === 'delivery' ? 'livraison' : 'à emporter'
+    })`,
+    link: '/dashboard/orders',
   })
 
   res.status(201).json(order)
