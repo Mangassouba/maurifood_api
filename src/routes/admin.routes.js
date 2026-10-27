@@ -4,6 +4,7 @@ const admin = require('../controllers/admin.controller')
 const { listPlans } = require('../controllers/subscription.controller')
 const notifications = require('../controllers/notifications.controller')
 const stats = require('../controllers/stats.controller')
+const reviews = require('../controllers/reviews.controller')
 
 const router = Router()
 
@@ -20,5 +21,8 @@ router.get('/notifications', notifications.listForAdmin)
 router.put('/notifications/:id/read', notifications.markRead)
 
 router.get('/activity-logs', admin.listActivityLogs)
+
+router.get('/reviews', reviews.listForAdmin)
+router.put('/reviews/:id/published', reviews.setPublished)
 
 module.exports = router

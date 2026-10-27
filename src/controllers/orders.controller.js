@@ -141,6 +141,7 @@ async function getOrderByCode(req, res) {
       items: { with: { dish: true } },
       restaurant: { columns: { name: true, phone: true, address: true } },
       driver: { columns: { name: true, phone: true } },
+      review: { columns: { rating: true, comment: true } },
     },
   })
   if (!order) return res.status(404).json({ error: 'Commande introuvable' })

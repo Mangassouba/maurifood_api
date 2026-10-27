@@ -240,6 +240,24 @@ const activityLogs = pgTable('activity_logs', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
 
+// Avis laissés par les clients sur une commande livrée ou retirée (un seul par commande).
+// is_published permet au super admin de masquer un avis inapproprié.
+const reviews = pgTable('reviews', {
+  id: serial('id').primaryKey(),
+  orderId: integer('order_id')
+    .notNull()
+    .unique()
+    .references(() => orders.id, { onDelete: 'cascade' }),
+  restaurantId: integer('restaurant_id')
+    .notNull()
+    .references(() => restaurants.id, { onDelete: 'cascade' }),
+  authorName: text('author_name').notNull(),
+  rating: integer('rating').notNull(),
+  comment: text('comment'),
+  isPublished: boolean('is_published').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+})
+
 const restaurantsRelations = relations(restaurants, ({ many, one }) => ({
   users: many(users),
   categories: many(categories),
@@ -250,6 +268,7 @@ const restaurantsRelations = relations(restaurants, ({ many, one }) => ({
   notifications: many(notifications),
   restaurantNotifications: many(restaurantNotifications),
   activityLogs: many(activityLogs),
+  reviews: many(reviews),
   subscription: one(subscriptions, {
     fields: [restaurants.id],
     references: [subscriptions.restaurantId],
@@ -304,6 +323,7 @@ const ordersRelations = relations(orders, ({ one, many }) => ({
   }),
   driver: one(drivers, { fields: [orders.driverId], references: [drivers.id] }),
   items: many(orderItems),
+  review: one(reviews, { fields: [orders.id], references: [reviews.orderId] }),
 }))
 
 const orderItemsRelations = relations(orderItems, ({ one }) => ({
@@ -345,6 +365,11 @@ const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }))
 
+const reviewsRelations = relations(reviews, ({ one }) => ({
+  order: one(orders, { fields: [reviews.orderId], references: [orders.id] }),
+  restaurant: one(restaurants, { fields: [reviews.restaurantId], references: [restaurants.id] }),
+}))
+
 module.exports = {
   userRole,
   subscriptionStatus,
@@ -369,6 +394,7 @@ module.exports = {
   restaurantNotifications,
   activityLogs,
   images,
+  reviews,
   restaurantsRelations,
   usersRelations,
   categoriesRelations,
@@ -384,4 +410,5 @@ module.exports = {
   notificationsRelations,
   restaurantNotificationsRelations,
   activityLogsRelations,
+  reviewsRelations,
 }

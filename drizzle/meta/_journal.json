@@ -85,6 +85,13 @@
       "when": 1792682703465,
       "tag": "0011_elite_moonstone",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793096246978,
+      "tag": "0012_chubby_kulan_gath",
+      "breakpoints": true
     }
   ]
 }
