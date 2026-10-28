@@ -12,7 +12,7 @@ async function subscriptionActive(req, res, next) {
     .where(eq(subscriptions.restaurantId, req.restaurantId))
 
   // Comparaison sur la date en plus du statut : le job d'expiration ne tourne
-  // qu'une fois par heure et ne traite pas les abonnements à l'essai.
+  // qu'une fois par heure.
   const expired =
     subscription &&
     (['past_due', 'cancelled'].includes(subscription.status) ||

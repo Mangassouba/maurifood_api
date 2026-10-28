@@ -1,9 +1,11 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const { eq, sql } = require('drizzle-orm')
+const { asc, eq, sql } = require('drizzle-orm')
 const db = require('../config/db')
-const { users, restaurants } = require('../db/schema')
+const { users, restaurants, plans, subscriptions } = require('../db/schema')
 const { logActivity } = require('../lib/activityLog')
+
+const TRIAL_DAYS = 15
 
 async function login(req, res) {
   const { email, password } = req.body
@@ -84,11 +86,28 @@ async function register(req, res) {
 
   const passwordHash = await bcrypt.hash(password, 10)
 
+  // L'essai gratuit est rattaché à la formule la moins chère : c'est celle que
+  // le restaurant retrouve dans son espace abonnement à la fin de l'essai.
+  const [trialPlan] = await db.select().from(plans).orderBy(asc(plans.price)).limit(1)
+  if (!trialPlan) {
+    return res.status(500).json({ error: 'Aucune formule disponible pour l’essai gratuit' })
+  }
+
   const { user, restaurant } = await db.transaction(async (tx) => {
+    // Le restaurant est activé immédiatement pour la durée de l'essai gratuit.
     const [restaurant] = await tx
       .insert(restaurants)
-      .values({ name: restaurantName, slug, isActive: false })
+      .values({ name: restaurantName, slug, isActive: true })
       .returning()
+
+    const now = new Date()
+    await tx.insert(subscriptions).values({
+      restaurantId: restaurant.id,
+      planId: trialPlan.id,
+      status: 'trialing',
+      currentPeriodStart: now,
+      currentPeriodEnd: new Date(now.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000),
+    })
 
     const [newUser] = await tx
       .insert(users)
@@ -106,14 +125,13 @@ async function register(req, res) {
 
   await logActivity({
     action: 'restaurant.registered',
-    message: `Nouveau restaurant inscrit : ${restaurant.name}`,
+    message: `Nouveau restaurant inscrit : ${restaurant.name} (essai gratuit de ${TRIAL_DAYS} jours)`,
     restaurantId: restaurant.id,
     actorId: user.id,
   })
 
   res.status(201).json({
-    message:
-      'Compte créé. Votre restaurant sera activé après validation par un administrateur.',
+    message: `Compte créé. Votre restaurant est actif avec un essai gratuit de ${TRIAL_DAYS} jours.`,
     userId: user.id,
   })
 }
